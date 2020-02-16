@@ -9,17 +9,26 @@ from subprocess import PIPE, Popen
 import subprocess
 
 import os
-consumer_key = ''
-consumer_secret = ''
-access_token = ''
-access_secret = ''
+
+
+ckey = sys.argv[1]
+csecret = sys.argv[2]
+atoken = sys.argv[3]
+asecret = sys.argv[4]
+languageslist =  map(str,  sys.argv[5].strip('[]').split(','))
+wordslist =  map(str,  sys.argv[6].strip('[]').split(','))
+count = int(sys.argv[7])
+
+consumer_key = ckey
+consumer_secret = csecret
+access_token = atoken
+access_secret = asecret
 
 auth = OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_secret)
 
 api = tweepy.API(auth)
 
-count = 0
 
 tweets_data_path = '/data/twitter_data.txt'
 
@@ -47,10 +56,10 @@ class MyListener(StreamListener):
 
     def on_data(self, data):
         try:
-            with open('tweets_small4.json', 'a') as f:
+            with open('tweetsnew1.json', 'a') as f:
                 f.write(data)
                 self.num_tweets += 1
-                if self.num_tweets < 100:
+                if self.num_tweets < count:
                     print(self.num_tweets)
                     return True
                 else:
@@ -60,13 +69,15 @@ class MyListener(StreamListener):
                     return False
         except BaseException as e:
             print("Error on_data: %s" % str(e))
-        return True
+            return True
 
     def on_error(self, status):
         print(status)
-        return True
+        print("Incorrect credintials or too many requests")
+        sys.exit(1)
+        return False
 
 
 twitter_stream = Stream(auth, MyListener())
-twitter_stream.filter(languages=["en"], track=["I", "a", "the", "love", "thank", "happy", "great"])
-(ret, out, err)= run_cmd(['/opt/hadoop/bin/hdfs', 'dfs', '-copyFromLocal', os.path.abspath("tweets_small4.json") , '/'])
+twitter_stream.filter(languages=languageslist, track=wordslist)
+(ret, out, err)= run_cmd(['/opt/hadoop/bin/hdfs', 'dfs','-moveFromLocal', '-f', os.path.abspath("tweetsnew1.json") , '/'])

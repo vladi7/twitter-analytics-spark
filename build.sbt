@@ -11,5 +11,6 @@ libraryDependencies ++= Seq(
   "org.twitter4j" % "twitter4j-core" % "3.0.3",
   "org.twitter4j" % "twitter4j-stream" % "3.0.3",
   "org.apache.bahir" %% "spark-streaming-twitter" % "2.4.0",
-
+  "io.spray" %%  "spray-json" % "1.3.4",
+  "com.typesafe.play" % "play-json_2.11"% "2.4.4"
 )
