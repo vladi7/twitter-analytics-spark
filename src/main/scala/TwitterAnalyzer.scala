@@ -1,13 +1,8 @@
 //http://blog.madhukaraphatak.com/introduction-to-spark-two-part-2
 //reference for word count done efficiently
-
+package analyzer
 
 import org.apache.spark.sql._
-
-
-
-
-
 import java.util.regex.Pattern
 
 import spray.json.DefaultJsonProtocol
@@ -49,8 +44,10 @@ import twitter4j.conf.ConfigurationBuilder
 import sys.process._
 import scala.util.matching.Regex
 import org.apache.spark.sql.{Encoder, Encoders}
-import org.apache.spark.sql.functions.{col,concat_ws}
+import org.apache.spark.sql.functions.{col, concat_ws}
+import java.util.{Calendar, Date}
 
+import org.joda.time.{DateTime, DateTimeZone}
 
 case class Tweet(id: Long,
                  text: String,
@@ -58,11 +55,23 @@ case class Tweet(id: Long,
                  urls: String,
                  likes: Long)
 
-object PrintTweets {
+object TwitterAnalyzer {
   def main(args: Array[String]) {
 
     def callPython(): Unit = {
-      val result = "python TweetStreamer.py consumer_key consumer_secret access_token access_secret [en,ru] [I,a,the,love,thank,happy,great] 100" ! ProcessLogger(stdout append _, stderr append _)
+
+
+      val consumerKey = args(0)replaceAll("\\s", "")
+      val consumerSecret = args(1)replaceAll("\\s", "")
+      val accessToken = args(3)replaceAll("\\s", "")
+      val accessSecret = args(2)replaceAll("\\s", "")
+      val languages = args(4)replaceAll("\\s", "")
+      val words = args(5)replaceAll("\\s", "")
+      val numberOfTweets = args(6)replaceAll("\\s", "")
+
+
+
+      val result = "python TweetStreamer.py "+ consumerKey + " "+consumerSecret+" "+ accessToken+" "+accessSecret+" "+languages +" "+words+" "+numberOfTweets ! ProcessLogger(stdout append _, stderr append _)
       println(result)
       println(result.toString())
       val ok = result.toString().contains( "1")
@@ -90,60 +99,84 @@ object PrintTweets {
     tweets.createOrReplaceTempView("tweetswithschema")
 
 
-    //Get hashtags and work on data to just have a table of hashtags
-    val dataset = tweets.select($"id", $"text", $"entities.hashtags", $"entities.urls", $"favorite_count" as "likes").as[Tweet]//(Encoders.product[SimpleTuple])
-    dataset.show(10)
-
-    val hashtags = ss.sql("SELECT entities.hashtags.text FROM tweetswithschema")
-    hashtags.filter($"text".isNotNull).show()
-
-    val newHashtags = hashtags.withColumn("newtext", concat_ws(" ", $"text"))
-    val newFilteredHashtags = newHashtags.filter(!($"newtext"===""))
-    newFilteredHashtags.createOrReplaceTempView("hashtagsfiltered")
-
-    val hashtagsFinal = ss.sql("SELECT newtext FROM hashtagsfiltered")
 
 
+    if(args(7).equalsIgnoreCase("Word Count Hashtags")||args(7).equalsIgnoreCase("Both")) {
+      //Get hashtags and work on data to just have a table of hashtags
+      val dataset = tweets.select($"id", $"text", $"entities.hashtags", $"entities.urls", $"favorite_count" as "likes").as[Tweet] //(Encoders.product[SimpleTuple])
+      dataset.show(10)
+      val hashtags = ss.sql("SELECT entities.hashtags.text FROM tweetswithschema")
+      hashtags.filter($"text".isNotNull).show()
+      hashtags.createOrReplaceTempView("hashtagtext")
+
+      val newHashtags = hashtags.withColumn("newtext", concat_ws(" ", $"text"))
+      val newFilteredHashtags = newHashtags.filter(!($"newtext" === ""))
+      newFilteredHashtags.createOrReplaceTempView("hashtagsfiltered")
+
+      val hashtagsFinal = ss.sql("SELECT newtext FROM hashtagsfiltered")
 
 
+      //Run a word count on hashtags and urls
+
+      // val pattern1 = new Regex("(?:\\s|\\A|^)[##]+([A-Za-z0-9-_]+)")
+
+      val pattern1 = new Regex("^\\s*[A-Za-z0-9]+(?:\\s+[A-Za-z0-9]+)*\\s*$")
+
+      //text.rdd.take(10).foreach(println)
+      val countsmapped = hashtagsFinal.flatMap(sqlRow => (pattern1 findAllIn sqlRow(0).toString).toList)
+      val countsreduced = countsmapped.groupByKey(_.toLowerCase)
+      val counts = countsreduced.count().orderBy($"count(1)".desc)
+      counts.show()
+
+
+      import java.text.SimpleDateFormat
+      import java.util.TimeZone
+      val date = new Date
+      val df = new SimpleDateFormat("yyyyMMddHHmmss")
+      df.setTimeZone(TimeZone.getTimeZone("America/Chicago"))
+      counts.repartition(1)
+        .write.format("com.databricks.spark.csv")
+        .option("header", "true").save("Output/Hashtags/Hashtags")
+        //.save("Output/Hashtags/"+df.format(date)+"Hashtags")
+
+    }
     //Get urls and work on data to just have a table of urls
+    if(args(7).equalsIgnoreCase("Word Count URLs")||args(7).equalsIgnoreCase("Both")) {
 
-    val urls = ss.sql("SELECT entities.urls.expanded_url FROM tweetswithschema")
-    urls.filter($"expanded_url".isNotNull).show()
+      val urls = ss.sql("SELECT entities.urls.expanded_url FROM tweetswithschema")
+      urls.filter($"expanded_url".isNotNull).show()
 
-    val newUrls = urls.withColumn("newtext", concat_ws(" ", $"expanded_url"))
-    val newFilteredUrls = newUrls.filter(!($"newtext"===""))
-    newFilteredUrls.createOrReplaceTempView("urlstagsfiltered")
-
-
-    val urlssFinal = ss.sql("SELECT newtext FROM urlstagsfiltered")
+      val newUrls = urls.withColumn("newtext", concat_ws(" ", $"expanded_url"))
+      val newFilteredUrls = newUrls.filter(!($"newtext" === ""))
+      newFilteredUrls.createOrReplaceTempView("urlstagsfiltered")
 
 
-    hashtags.createOrReplaceTempView("hashtagtext")
+      val urlssFinal = ss.sql("SELECT newtext FROM urlstagsfiltered")
 
 
 
-    //Run a word count on hashtags and urls
 
-   // val pattern1 = new Regex("(?:\\s|\\A|^)[##]+([A-Za-z0-9-_]+)")
+      val pattern2 = new Regex("(www|http)\\S+")
 
-    val pattern1 = new Regex("^\\s*[A-Za-z0-9]+(?:\\s+[A-Za-z0-9]+)*\\s*$")
+      val countsmapped2 = urlssFinal.flatMap(sqlRow => (pattern2 findAllIn sqlRow(0).toString).toList)
+      val countsreduced2 = countsmapped2.groupByKey(_.toLowerCase)
+      val counts2 = countsreduced2.count().orderBy($"count(1)".desc)
 
-    //text.rdd.take(10).foreach(println)
-    val countsmapped = hashtagsFinal.flatMap(sqlRow => (pattern1 findAllIn sqlRow(0).toString).toList)
-    val countsreduced = countsmapped.groupByKey(_.toLowerCase)
-    val counts = countsreduced.count().orderBy($"count(1)".desc)
-    counts.show()
+      counts2.show()
 
+      import java.text.SimpleDateFormat
+      import java.util.TimeZone
+      val date = new Date
+      val df = new SimpleDateFormat("yyyyMMddHHmmss")
+      df.setTimeZone(TimeZone.getTimeZone("America/Chicago"))
+     // counts2.write.csv("Output/"+df.format(date)+"outputURLs")
 
-    val pattern2 = new Regex("(www|http)\\S+")
-
-     val countsmapped2 = urlssFinal.flatMap(sqlRow => (pattern2 findAllIn sqlRow(0).toString).toList)
-     val countsreduced2 = countsmapped2.groupByKey(_.toLowerCase)
-     val counts2 = countsreduced2.count().orderBy($"count(1)".desc)
-
-    counts2.show()
-
+      counts2
+        .repartition(1)
+        .write.format("com.databricks.spark.csv")
+        .option("header", "true").save("Output/URLs/URLS")
+        //.save("Output/URLs/"+df.format(date)+"URLS")
+    }
   }
 
   def setupLogging() = {
