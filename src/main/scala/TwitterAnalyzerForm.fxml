@@ -10,6 +10,7 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ChoiceBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.effect.ColorAdjust?>
@@ -39,41 +40,42 @@
         <GridPane fx:id="grid" hgap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="716.0" prefWidth="400.0" style="-fx-padding: 20" vgap="10.0" StackPane.alignment="CENTER">
             <children>
                 <Label minWidth="-Infinity" prefHeight="30.0" prefWidth="704.0" style="-fx-font-size: 24" text="Twitter Analytics Project" GridPane.columnIndex="4" GridPane.columnSpan="2147483647" GridPane.halignment="CENTER" />
-                <Label prefHeight="16.0" prefWidth="158.0" text="  Key:" GridPane.rowIndex="3" />
-                <TextField fx:id="consumerKeyField" promptText="Consumer Key" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-                <Label prefHeight="16.0" prefWidth="139.0" text="Secret:" GridPane.rowIndex="4" />
-                <TextField fx:id="consumerSecretField" prefHeight="13.0" prefWidth="257.0" promptText="Consumer Secret" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-                <Label prefHeight="16.0" prefWidth="139.0" text="Action:" GridPane.rowIndex="12" />
-                <ChoiceBox fx:id="actionChoiceBox" value="Both" GridPane.columnIndex="1" GridPane.rowIndex="12">
+                <Label prefHeight="16.0" prefWidth="229.0" text="Key:" GridPane.rowIndex="3" />
+                <TextField fx:id="consumerKeyField" promptText="Consumer Key" text="DBBLXnPte2RbTlX0Oh1DhQegp" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                <Label prefHeight="16.0" prefWidth="229.0" text="Secret:" GridPane.rowIndex="4" />
+                <TextField fx:id="consumerSecretField" prefHeight="13.0" prefWidth="257.0" promptText="Consumer Secret" text="ZyCfhnPeaLYK7TmiKweJec49WhjOHce4yWlkEueT5FSX39XOPX" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                <Label prefHeight="16.0" prefWidth="218.0" text="Action:" GridPane.rowIndex="13" />
+                <ChoiceBox fx:id="actionChoiceBox" value="Both" GridPane.columnIndex="1" GridPane.rowIndex="13">
                     <items>
                         <FXCollections fx:factory="observableArrayList">
-                            <String fx:value="Word Count Hashtags" />
-                            <String fx:value="Word Count URLs" />
+                            <String fx:value="Top 5 Word Count Hashtags" />
+                            <String fx:value="Top 5 Word Count URLs" />
                             <String fx:value="Both" />
                         </FXCollections>
                     </items>
                 </ChoiceBox>
-                <Label prefHeight="16.0" prefWidth="140.0" text="Results:" textAlignment="RIGHT" wrapText="true" GridPane.rowIndex="13" GridPane.valignment="BASELINE" />
-                <TextArea fx:id="additionalInfoTextArea" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="135.0" prefRowCount="8" prefWidth="274.0" text="After clicking &quot;Submit&quot;, please wait for the job to complete. After that, you will see a message in this box about that." wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="13" GridPane.vgrow="ALWAYS" />
-                <HBox id="HBox" alignment="CENTER_RIGHT" spacing="10.0" GridPane.columnIndex="1" GridPane.rowIndex="14">
+                <Label prefHeight="16.0" prefWidth="217.0" text="Results:" textAlignment="RIGHT" wrapText="true" GridPane.rowIndex="14" GridPane.valignment="BASELINE" />
+                <TextArea fx:id="additionalInfoTextArea" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="135.0" prefRowCount="8" prefWidth="274.0" text="After clicking &quot;Submit&quot;, please wait for the job to complete. After that, you will see a message in this box about that." wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="14" GridPane.vgrow="ALWAYS" />
+                <HBox id="HBox" alignment="CENTER_RIGHT" spacing="10.0" GridPane.columnIndex="1" GridPane.rowIndex="15">
                     <children>
                         <Button mnemonicParsing="false" onAction="#handleClear" text="Clear" />
                         <Button fx:id="buttonSubmit" onAction="#handleSubmit" text="Submit" />
                         <Button fx:id="buttonGraph" disable="true" onAction="#handleGraph" text="Graph" />
+                  <Button fx:id="buttonSave" disable="true" mnemonicParsing="false" onAction="#handleSave" text="Save Graph" />
                     </children>
                     <padding>
                         <Insets left="10.0" right="10.0" />
                     </padding>
                 </HBox>
-            <TextField fx:id="accessSecretField" minHeight="-Infinity" minWidth="-Infinity" promptText="Access Secret" GridPane.columnIndex="1" GridPane.rowIndex="6" />
-            <TextField fx:id="accessTokenField" prefHeight="29.0" prefWidth="257.0" promptText="Access Token" GridPane.columnIndex="1" GridPane.rowIndex="5" />
-            <Label prefHeight="16.0" prefWidth="138.0" text="Token:" GridPane.rowIndex="5" />
-            <Label prefHeight="33.0" prefWidth="138.0" text="Secret:" GridPane.rowIndex="6" />
-            <Label prefHeight="16.0" prefWidth="140.0" text="Words To Look For:" GridPane.rowIndex="10" />
+            <TextField fx:id="accessSecretField" minHeight="-Infinity" minWidth="-Infinity" promptText="Access Secret" text="WG5vi86sVpnjT4EwgIzaAHVGRgYsfWvSRsydgWaDogZ3A" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+            <TextField fx:id="accessTokenField" prefHeight="29.0" prefWidth="257.0" promptText="Access Token" text="1220900648968912897-GxoA6gr81750WqMLSwmJbzLmBL0ryG" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+            <Label prefHeight="16.0" prefWidth="220.0" text="Token:" GridPane.rowIndex="5" />
+            <Label prefHeight="27.0" prefWidth="221.0" text="Secret:" GridPane.rowIndex="6" />
+            <Label prefHeight="16.0" prefWidth="213.0" text="Words To Look For:" GridPane.rowIndex="10" />
             <TextField fx:id="wordsField" promptText="[I,a,love,thank,happy,great]" text="[I,a,the,love,thank,happy,great]" GridPane.columnIndex="1" GridPane.rowIndex="10" />
             <TextField fx:id="numberOfTweetsField" promptText="10000" text="1000" GridPane.columnIndex="1" GridPane.rowIndex="11" />
-            <Label prefHeight="16.0" prefWidth="140.0" text="Number Of Tweets:" GridPane.rowIndex="11" />
-            <Label prefHeight="16.0" prefWidth="139.0" text="Languages:" GridPane.rowIndex="9" />
+            <Label prefHeight="16.0" prefWidth="210.0" text="Number Of Tweets:" GridPane.rowIndex="11" />
+            <Label prefHeight="16.0" prefWidth="234.0" text="Languages:" GridPane.rowIndex="9" />
             <TextField fx:id="languagesField" prefHeight="200.0" prefWidth="200.0" promptText="[en,ru]" text="[en,ru]" GridPane.columnIndex="1" GridPane.rowIndex="9" />
             <LineChart fx:id="lineChart" visible="false" GridPane.columnIndex="3" GridPane.rowIndex="5">
               <xAxis>
@@ -83,7 +85,7 @@
                 <NumberAxis side="LEFT" />
               </yAxis>
             </LineChart>
-            <BarChart fx:id="barChartHashtagsURLsCount" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="779.0" prefWidth="812.0" title="Top 5 Hashtags/URLs Count" visible="false" GridPane.columnIndex="2" GridPane.rowIndex="11">
+            <BarChart fx:id="barChartHashtagsURLsCount" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="861.0" prefWidth="997.0" title="Top 5 Hashtags/URLs Count" visible="false" GridPane.columnIndex="3" GridPane.rowIndex="13">
                <xAxis>
                   <CategoryAxis animated="false" side="BOTTOM" />
                </xAxis>
@@ -91,13 +93,16 @@
                   <NumberAxis side="LEFT" />
                </yAxis>
             </BarChart>
+            <ProgressBar fx:id="progressBar" prefWidth="200.0" progress="0.0" visible="false" GridPane.rowIndex="15" />
+            <TextField fx:id="locationOfTheDataset" prefHeight="26.0" prefWidth="532.0" promptText="hdfs://localhost:9000/tweetsnew1.json" text="hdfs://localhost:9000/tweetsnew1.json" GridPane.columnIndex="1" GridPane.rowIndex="12" />
+            <Label prefHeight="100.0" prefWidth="158.0" text="Use own JSON dataset? &#10;(Optional) &#10;HDFS or Local.&#10;If specified,&#10;the above fields &#10;are not used&#10;" GridPane.rowIndex="12" />
             </children>
             <columnConstraints>
-                <ColumnConstraints halignment="RIGHT" maxWidth="147.0" minWidth="60.0" prefWidth="147.0" />
-                <ColumnConstraints hgrow="ALWAYS" maxWidth="265.0" minWidth="203.0" prefWidth="203.0" />
-            <ColumnConstraints hgrow="ALWAYS" maxWidth="265.0" minWidth="203.0" prefWidth="203.0" />
-            <ColumnConstraints hgrow="ALWAYS" maxWidth="265.0" minWidth="203.0" prefWidth="203.0" />
-            <ColumnConstraints hgrow="ALWAYS" maxWidth="265.0" minWidth="203.0" prefWidth="203.0" />
+                <ColumnConstraints halignment="RIGHT" maxWidth="264.0" minWidth="60.0" prefWidth="158.0" />
+                <ColumnConstraints hgrow="ALWAYS" maxWidth="632.0" minWidth="191.0" prefWidth="321.0" />
+            <ColumnConstraints hgrow="ALWAYS" maxWidth="603.0" minWidth="37.0" prefWidth="51.0" />
+            <ColumnConstraints hgrow="ALWAYS" maxWidth="781.0" minWidth="101.0" prefWidth="101.0" />
+            <ColumnConstraints hgrow="ALWAYS" maxWidth="888.0" minWidth="203.0" prefWidth="888.0" />
             </columnConstraints>
          <rowConstraints>
             <RowConstraints />
@@ -111,8 +116,9 @@
             <RowConstraints maxHeight="82.0" minHeight="27.0" prefHeight="33.0" />
             <RowConstraints maxHeight="86.0" minHeight="0.0" prefHeight="31.0" />
             <RowConstraints maxHeight="72.0" minHeight="0.0" prefHeight="33.0" />
-            <RowConstraints maxHeight="122.0" minHeight="0.0" percentHeight="0.0" prefHeight="78.0" />
-            <RowConstraints maxHeight="266.0" minHeight="10.0" prefHeight="50.0" />
+            <RowConstraints maxHeight="122.0" minHeight="0.0" percentHeight="0.0" prefHeight="16.0" />
+            <RowConstraints maxHeight="166.0" minHeight="10.0" percentHeight="0.0" prefHeight="124.0" />
+            <RowConstraints maxHeight="266.0" minHeight="0.0" prefHeight="42.0" />
             <RowConstraints maxHeight="384.0" minHeight="10.0" prefHeight="361.0" />
             <RowConstraints maxHeight="307.0" minHeight="10.0" prefHeight="53.0" />
          </rowConstraints>
