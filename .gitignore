@@ -1,4 +1,3 @@
-*.iml .DS_Store .idea
 # Project exclude paths
 /project/target/
 /target/
