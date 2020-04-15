@@ -39,18 +39,25 @@
         </ImageView>
         <GridPane fx:id="grid" hgap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="716.0" prefWidth="400.0" style="-fx-padding: 20" vgap="10.0" StackPane.alignment="CENTER">
             <children>
-                <Label minWidth="-Infinity" prefHeight="30.0" prefWidth="704.0" style="-fx-font-size: 24" text="Twitter Analytics Project" GridPane.columnIndex="4" GridPane.columnSpan="2147483647" GridPane.halignment="CENTER" />
+                <Label minWidth="-Infinity" prefHeight="30.0" prefWidth="1156.0" style="-fx-font-size: 24" text="Twitter Stocks/Brands Analytics Project" GridPane.columnIndex="4" GridPane.columnSpan="2147483647" GridPane.halignment="CENTER" />
                 <Label prefHeight="16.0" prefWidth="229.0" text="Key:" GridPane.rowIndex="3" />
-                <TextField fx:id="consumerKeyField" promptText="Consumer Key" text="DBBLXnPte2RbTlX0Oh1DhQegp" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                <TextField fx:id="consumerKeyField" promptText="Consumer Key" text="54AJ6AZcodyDFPrVhnhIpASBz" GridPane.columnIndex="1" GridPane.rowIndex="3" />
                 <Label prefHeight="16.0" prefWidth="229.0" text="Secret:" GridPane.rowIndex="4" />
-                <TextField fx:id="consumerSecretField" prefHeight="13.0" prefWidth="257.0" promptText="Consumer Secret" text="ZyCfhnPeaLYK7TmiKweJec49WhjOHce4yWlkEueT5FSX39XOPX" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                <TextField fx:id="consumerSecretField" prefHeight="13.0" prefWidth="257.0" promptText="Consumer Secret" text="bjtktqJzpAoYf7CvcV71MRVGLuWK4ldVvabypj6GpQloGky4Zv" GridPane.columnIndex="1" GridPane.rowIndex="4" />
                 <Label prefHeight="16.0" prefWidth="218.0" text="Action:" GridPane.rowIndex="13" />
                 <ChoiceBox fx:id="actionChoiceBox" value="Both" GridPane.columnIndex="1" GridPane.rowIndex="13">
                     <items>
                         <FXCollections fx:factory="observableArrayList">
                             <String fx:value="Top 5 Word Count Hashtags" />
                             <String fx:value="Top 5 Word Count URLs" />
-                            <String fx:value="Both" />
+                            <String fx:value="Sentiments From Top Hashtags" />
+                            <String fx:value="Sentiments From Top URLs" />
+                            <String fx:value="Sentiments From Top Hashtags Using ML" />
+                            <String fx:value="Sentiments From Top URLs Using ML" />
+                            <String fx:value="Timeline of Sentiments Hashtags" />
+                            <String fx:value="Timeline of Sentiments URL" />
+                            <String fx:value="Comparison Of Product Sentiment by Region Hashtags" />
+                            <String fx:value="Comparison Of Product Sentiment by Region URL" />
                         </FXCollections>
                     </items>
                 </ChoiceBox>
@@ -67,11 +74,11 @@
                         <Insets left="10.0" right="10.0" />
                     </padding>
                 </HBox>
-            <TextField fx:id="accessSecretField" minHeight="-Infinity" minWidth="-Infinity" promptText="Access Secret" text="WG5vi86sVpnjT4EwgIzaAHVGRgYsfWvSRsydgWaDogZ3A" GridPane.columnIndex="1" GridPane.rowIndex="6" />
-            <TextField fx:id="accessTokenField" prefHeight="29.0" prefWidth="257.0" promptText="Access Token" text="1220900648968912897-GxoA6gr81750WqMLSwmJbzLmBL0ryG" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+            <TextField fx:id="accessSecretField" minHeight="-Infinity" minWidth="-Infinity" promptText="Access Secret" text="BAnYeoMEfEldgUISaUavEc7w95oW6efoJwLY1KNTYLoXN" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+            <TextField fx:id="accessTokenField" prefHeight="29.0" prefWidth="257.0" promptText="Access Token" text="1220896132613787649-OegxnP2lNyLQMVr5B3BLXKiC7pF7FB" GridPane.columnIndex="1" GridPane.rowIndex="5" />
             <Label prefHeight="16.0" prefWidth="220.0" text="Token:" GridPane.rowIndex="5" />
             <Label prefHeight="27.0" prefWidth="221.0" text="Secret:" GridPane.rowIndex="6" />
-            <Label prefHeight="16.0" prefWidth="213.0" text="Words To Look For:" GridPane.rowIndex="10" />
+            <Label prefHeight="16.0" prefWidth="213.0" text="Brands/Stocks:" GridPane.rowIndex="10" />
             <TextField fx:id="wordsField" promptText="[I,a,love,thank,happy,great]" text="[I,a,the,love,thank,happy,great]" GridPane.columnIndex="1" GridPane.rowIndex="10" />
             <TextField fx:id="numberOfTweetsField" promptText="10000" text="1000" GridPane.columnIndex="1" GridPane.rowIndex="11" />
             <Label prefHeight="16.0" prefWidth="210.0" text="Number Of Tweets:" GridPane.rowIndex="11" />
