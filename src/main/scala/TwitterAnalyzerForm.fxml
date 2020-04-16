@@ -50,7 +50,7 @@
                         <FXCollections fx:factory="observableArrayList">
                             <String fx:value="Top 5 Word Count Hashtags" />
                             <String fx:value="Top 5 Word Count URLs" />
-                            <String fx:value="Sentiments From Top Hashtags" />
+                            <String fx:value="Top Influencial Hashtags(hashtags sorted by followers of a user)" />
                             <String fx:value="Sentiments From Top URLs" />
                             <String fx:value="Sentiments From Top Hashtags Using ML" />
                             <String fx:value="Sentiments From Top URLs Using ML" />

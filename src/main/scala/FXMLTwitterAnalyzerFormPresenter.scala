@@ -5,31 +5,21 @@
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.{Date, TimeZone}
-import java.util.Locale.Category
 
+import org.apache.commons.io.FileUtils
+import org.apache.spark.sql.SparkSession
+import scalafx.collections.ObservableBuffer
+import scalafx.embed.swing.SwingFXUtils
 import scalafx.event.ActionEvent
-import scalafx.scene.control.{Button, ChoiceBox, ProgressBar, ProgressIndicator, TextArea, TextField}
+import scalafx.scene.SnapshotParameters
+import scalafx.scene.chart.{BarChart, LineChart, XYChart}
+import scalafx.scene.control._
 import scalafx.scene.layout.GridPane
 import scalafxml.core.macros.sfxml
-import com.lynden.gmapsfx.GoogleMapView
-import org.apache.commons.io.FileUtils
-import org.apache.spark
-import org.apache.spark.sql.{Row, SparkSession}
-import org.spark_project.guava.collect.Iterables
-import scalafx.scene.chart.{BarChart, CategoryAxis, LineChart, NumberAxis, XYChart}
-import scalafx.collections.ObservableBuffer
-import org.apache.commons.io.FileUtils.cleanDirectory
-import org.apache.spark.sql.functions.concat_ws
-import scalafx.embed.swing.SwingFXUtils
-import scalafx.scene.SnapshotParameters
-import scalafx.scene.image.WritableImage
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.sys.process.{ProcessLogger, stderr, stdout}
-import scala.util.matching.Regex
+import scala.concurrent.Future
 import scala.util.{Failure, Success}
-import sys.process._
 case class Tweet(id: Long,
                  text: String,
                  hashTags: String,
@@ -135,8 +125,9 @@ class FXMLTwitterAnalyzerFormPresenter(private val consumerKeyField: TextField,
 
     val image =  barChartHashtagsURLsCount.snapshot(new SnapshotParameters(), null)
 
-    import javax.imageio.ImageIO
     import java.io.IOException
+
+    import javax.imageio.ImageIO
     val file = new File("OutputGraphs/"+df.format(date)+"chart.png")
 
     try ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file)
@@ -205,6 +196,7 @@ class FXMLTwitterAnalyzerFormPresenter(private val consumerKeyField: TextField,
       buttonGraph.setDisable(true)
       actionChoiceBox.setDisable(false)
       buttonSubmit.setDisable(false)
+      barChartHashtagsURLsCount.setTitle("Top 5 Word Count Hashtags")
       return
     }
     if (actionValue.equals("Top 5 Word Count URLs")) {
@@ -234,6 +226,40 @@ class FXMLTwitterAnalyzerFormPresenter(private val consumerKeyField: TextField,
       actionChoiceBox.setDisable(false)
       buttonSubmit.setDisable(false)
       additionalInfoTextArea.text = "Graph Job has been completed. Please look in the terminal for its output. "
+      barChartHashtagsURLsCount.setTitle("Top 5 Word Count URLs")
+
+      return
+    }
+
+    if (actionValue.equals("Top Influencial Hashtags(hashtags sorted by followers of a user)")) {
+
+      val dataFromFileURLs = ss.read.format("csv").option("header", "true").load("Output/Followers/**/*csv")
+
+      val arrayOfRowsURLs = dataFromFileURLs.take(5)
+      val arrayOfRowsURLsNoBraces = for (e <- arrayOfRowsURLs) yield e.toString().replaceAll("[\\[\\]]", "")
+      val arrayOfRowsURLsFinal = for (e <- arrayOfRowsURLsNoBraces) yield e.toString() split (",")
+      arrayOfRowsURLsFinal(0)(0).toString.substring(0, 5)
+
+      val dataURLs = ObservableBuffer(Seq(
+        (arrayOfRowsURLsFinal(0)(0).toString.substring(0, Math.min(arrayOfRowsURLsFinal(0)(0).toString.length, 30)), arrayOfRowsURLsFinal(0)(1).toInt),
+        (arrayOfRowsURLsFinal(1)(0).toString.substring(0, Math.min(arrayOfRowsURLsFinal(1)(0).toString.length, 30)), arrayOfRowsURLsFinal(1)(1).toInt),
+        (arrayOfRowsURLsFinal(2)(0).toString.substring(0, Math.min(arrayOfRowsURLsFinal(2)(0).toString.length, 30)), arrayOfRowsURLsFinal(2)(1).toInt),
+        (arrayOfRowsURLsFinal(3)(0).toString.substring(0, Math.min(arrayOfRowsURLsFinal(3)(0).toString.length, 30)), arrayOfRowsURLsFinal(3)(1).toInt),
+        (arrayOfRowsURLsFinal(4)(0).toString.substring(0, Math.min(arrayOfRowsURLsFinal(4)(0).toString.length, 30)), arrayOfRowsURLsFinal(4)(1).toInt)
+
+      ) map { case (x, y) => XYChart.Data[String, Number](x, y) })
+
+      val seriesURLs = XYChart.Series[String, Number]("Hashtags posted by the people with the most followers", dataURLs)
+      barChartHashtagsURLsCount.getData.add(seriesURLs)
+      barChartHashtagsURLsCount.visible = true
+      val file2 = new File("Output/Followers/")
+      FileUtils.cleanDirectory(file2);
+      buttonGraph.setDisable(true)
+      actionChoiceBox.setDisable(false)
+      buttonSubmit.setDisable(false)
+      additionalInfoTextArea.text = "Graph Job has been completed. Please look in the terminal for its output. "
+      barChartHashtagsURLsCount.setTitle("Top 5 Hashtags by Followers Of The Account")
+
       return
     }
   }
