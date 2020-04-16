@@ -1,3 +1,7 @@
+/*
+Inspired by https://github.com/P7h/Spark-MLlib-Twitter-Sentiment-Analysis
+ */
+
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.mllib.classification.NaiveBayesModel
 import org.apache.spark.mllib.feature.HashingTF

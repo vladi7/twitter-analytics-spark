@@ -1,4 +1,6 @@
-
+/*
+Inspired by https://github.com/P7h/Spark-MLlib-Twitter-Sentiment-Analysis
+ */
 
 package org.p7h.spark.sentiment.mllib
 
