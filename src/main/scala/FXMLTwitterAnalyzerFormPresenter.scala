@@ -7,12 +7,12 @@ import java.text.SimpleDateFormat
 import java.util.{Date, TimeZone}
 
 import org.apache.commons.io.FileUtils
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{Row, SparkSession}
 import scalafx.collections.ObservableBuffer
 import scalafx.embed.swing.SwingFXUtils
 import scalafx.event.ActionEvent
 import scalafx.scene.SnapshotParameters
-import scalafx.scene.chart.{BarChart, LineChart, XYChart}
+import scalafx.scene.chart.{BarChart, LineChart, PieChart, XYChart}
 import scalafx.scene.control._
 import scalafx.scene.layout.GridPane
 import scalafxml.core.macros.sfxml
@@ -42,11 +42,13 @@ class FXMLTwitterAnalyzerFormPresenter(private val consumerKeyField: TextField,
                                        private val buttonSave: Button,
                                        private val buttonSubmit: Button,
                                        private val progressBar: ProgressBar,
-                                       private val locationOfTheDataset: TextField) {
+                                       private val locationOfTheDataset: TextField,
+                                       private val pieChart: PieChart
+                                      ) {
 
   def handleSubmit(event: ActionEvent): Unit = {
     barChartHashtagsURLsCount.getData.clear()
-
+    pieChart.getData.clear
     if(!locationOfTheDataset.text.value.isEmpty)
       {
         val f = Future {
@@ -88,6 +90,7 @@ class FXMLTwitterAnalyzerFormPresenter(private val consumerKeyField: TextField,
     buttonSubmit.setDisable(true)
     barChartHashtagsURLsCount.visible = false
     progressBar.visible = true
+    pieChart.visible = false
 
     progressBar.setProgress( ProgressIndicator.IndeterminateProgress)
   }
@@ -111,6 +114,8 @@ class FXMLTwitterAnalyzerFormPresenter(private val consumerKeyField: TextField,
     FileUtils.cleanDirectory(file1);
     FileUtils.cleanDirectory(file2);
     barChartHashtagsURLsCount.visible = false
+    pieChart.visible = false
+
     buttonSave.setDisable(true)
 
 
@@ -259,6 +264,75 @@ class FXMLTwitterAnalyzerFormPresenter(private val consumerKeyField: TextField,
       buttonSubmit.setDisable(false)
       additionalInfoTextArea.text = "Graph Job has been completed. Please look in the terminal for its output. "
       barChartHashtagsURLsCount.setTitle("Top 5 Hashtags by Followers Of The Account")
+
+      return
+    }
+    if (actionValue.equals("Top Influencial URLs(urls sorted by followers of a user)")) {
+
+      val dataFromFileURLs = ss.read.format("csv").option("header", "true").load("Output/Followers/**/*csv")
+
+      val arrayOfRowsURLs = dataFromFileURLs.take(5)
+      val arrayOfRowsURLsNoBraces = for (e <- arrayOfRowsURLs) yield e.toString().replaceAll("[\\[\\]]", "")
+      val arrayOfRowsURLsFinal = for (e <- arrayOfRowsURLsNoBraces) yield e.toString() split (",")
+      arrayOfRowsURLsFinal(0)(0).toString.substring(0, 5)
+
+      val dataURLs = ObservableBuffer(Seq(
+        (arrayOfRowsURLsFinal(0)(0).toString.substring(0, Math.min(arrayOfRowsURLsFinal(0)(0).toString.length, 50)), arrayOfRowsURLsFinal(0)(1).toInt),
+        (arrayOfRowsURLsFinal(1)(0).toString.substring(0, Math.min(arrayOfRowsURLsFinal(1)(0).toString.length, 50)), arrayOfRowsURLsFinal(1)(1).toInt),
+        (arrayOfRowsURLsFinal(2)(0).toString.substring(0, Math.min(arrayOfRowsURLsFinal(2)(0).toString.length, 50)), arrayOfRowsURLsFinal(2)(1).toInt),
+        (arrayOfRowsURLsFinal(3)(0).toString.substring(0, Math.min(arrayOfRowsURLsFinal(3)(0).toString.length, 50)), arrayOfRowsURLsFinal(3)(1).toInt),
+        (arrayOfRowsURLsFinal(4)(0).toString.substring(0, Math.min(arrayOfRowsURLsFinal(4)(0).toString.length, 50)), arrayOfRowsURLsFinal(4)(1).toInt)
+
+      ) map { case (x, y) => XYChart.Data[String, Number](x, y) })
+
+
+      val seriesURLs = XYChart.Series[String, Number]("URLs posted by the people with the most followers", dataURLs)
+      barChartHashtagsURLsCount.getData.add(seriesURLs)
+      barChartHashtagsURLsCount.visible = true
+      val file2 = new File("Output/Followers/")
+      FileUtils.cleanDirectory(file2);
+      buttonGraph.setDisable(true)
+      actionChoiceBox.setDisable(false)
+      buttonSubmit.setDisable(false)
+      additionalInfoTextArea.text = "Graph Job has been completed. Please look in the terminal for its output. "
+      barChartHashtagsURLsCount.setTitle("Top 5 URLs by Followers Of The Account")
+
+      return
+    }
+    if (actionValue.equals("Sentiments Piechart")) {
+      val dataFromFileURLs = ss.read.format("csv").option("header", "true").load("Output/Sentiment/**/*csv")
+
+      val arrayOfRowsURLs: Array[Row] = dataFromFileURLs.take(3)
+      val arrayOfRowsURLsNoBraces = for (e <- arrayOfRowsURLs) yield e.toString().replaceAll("[\\[\\]]", "")
+      val arrayOfRowsURLsFinal = for (e <- arrayOfRowsURLsNoBraces) yield e.toString() split (",")
+//      arrayOfRowsURLsFinal(0)(0).toString.substring(0, 5)
+      val percentagePositive = (arrayOfRowsURLsFinal(0)(1).toDouble/(arrayOfRowsURLsFinal(0)(1).toDouble+ arrayOfRowsURLsFinal(1)(1).toDouble+arrayOfRowsURLsFinal(2)(1).toDouble))*100
+      val percentageNeutral=(arrayOfRowsURLsFinal(1)(1).toDouble/(arrayOfRowsURLsFinal(0)(1).toDouble+ arrayOfRowsURLsFinal(1)(1).toDouble+arrayOfRowsURLsFinal(2)(1).toDouble))*100
+      val percentageNegative=(arrayOfRowsURLsFinal(2)(1).toDouble/(arrayOfRowsURLsFinal(0)(1).toDouble+ arrayOfRowsURLsFinal(1)(1).toDouble+arrayOfRowsURLsFinal(2)(1).toDouble))*100
+      val data = ObservableBuffer(Seq((arrayOfRowsURLsFinal(2)(0).toString + "("+ percentageNegative.toString.substring(0,4)+"%)", arrayOfRowsURLsFinal(2)(1).toInt), (arrayOfRowsURLsFinal(1)(0).toString + "("+ percentageNeutral.toString.substring(0,4)+"%)", arrayOfRowsURLsFinal(1)(1).toInt), (arrayOfRowsURLsFinal(0)(0).toString+"("+ percentagePositive.toString.substring(0,4)+"%)", arrayOfRowsURLsFinal(0)(1).toInt)))map {case (x, y) => PieChart.Data(x, y)}
+     // val seriesURLs = PieChart.Series[String, Number]("URLs posted by the people with the most followers", data)
+
+      pieChart.getData.addAll(data)
+//      val dataURLs = ObservableBuffer(Seq(
+//        (arrayOfRowsURLsFinal(0)(0).toString.substring(0, Math.min(arrayOfRowsURLsFinal(0)(0).toString.length, 50)), arrayOfRowsURLsFinal(0)(1).toInt),
+//        (arrayOfRowsURLsFinal(1)(0).toString.substring(0, Math.min(arrayOfRowsURLsFinal(1)(0).toString.length, 50)), arrayOfRowsURLsFinal(1)(1).toInt),
+//        (arrayOfRowsURLsFinal(2)(0).toString.substring(0, Math.min(arrayOfRowsURLsFinal(2)(0).toString.length, 50)), arrayOfRowsURLsFinal(2)(1).toInt),
+//        (arrayOfRowsURLsFinal(3)(0).toString.substring(0, Math.min(arrayOfRowsURLsFinal(3)(0).toString.length, 50)), arrayOfRowsURLsFinal(3)(1).toInt),
+//        (arrayOfRowsURLsFinal(4)(0).toString.substring(0, Math.min(arrayOfRowsURLsFinal(4)(0).toString.length, 50)), arrayOfRowsURLsFinal(4)(1).toInt)
+//
+//      ) map { case (x, y) => XYChart.Data[String, Number](x, y) })
+
+
+//      val seriesURLs = XYChart.Series[String, Number]("URLs posted by the people with the most followers", dataURLs)
+
+      pieChart.visible = true
+      val file2 = new File("Output/Sentiment/")
+      FileUtils.cleanDirectory(file2);
+      buttonGraph.setDisable(true)
+      actionChoiceBox.setDisable(false)
+      buttonSubmit.setDisable(false)
+      additionalInfoTextArea.text = "Graph Job has been completed. Please look in the terminal for its output. "
+      //barChartHashtagsURLsCount.setTitle("Top 5 URLs by Followers Of The Account")
 
       return
     }

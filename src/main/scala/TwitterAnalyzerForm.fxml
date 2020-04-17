@@ -7,6 +7,7 @@
 <?import javafx.scene.chart.CategoryAxis?>
 <?import javafx.scene.chart.LineChart?>
 <?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.chart.PieChart?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ChoiceBox?>
 <?import javafx.scene.control.Label?>
@@ -37,7 +38,7 @@
                 <Image preserveRatio="true" requestedHeight="1000.0" requestedWidth="1600.0" url="@white.jpg" />
             </image>
         </ImageView>
-        <GridPane fx:id="grid" hgap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="716.0" prefWidth="400.0" style="-fx-padding: 20" vgap="10.0" StackPane.alignment="CENTER">
+        <GridPane fx:id="grid" hgap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="999.0" prefWidth="1939.0" style="-fx-padding: 20" vgap="10.0" StackPane.alignment="CENTER">
             <children>
                 <Label minWidth="-Infinity" prefHeight="30.0" prefWidth="1156.0" style="-fx-font-size: 24" text="Twitter Stocks/Brands Analytics Project" GridPane.columnIndex="4" GridPane.columnSpan="2147483647" GridPane.halignment="CENTER" />
                 <Label prefHeight="16.0" prefWidth="229.0" text="Key:" GridPane.rowIndex="3" />
@@ -51,8 +52,8 @@
                             <String fx:value="Top 5 Word Count Hashtags" />
                             <String fx:value="Top 5 Word Count URLs" />
                             <String fx:value="Top Influencial Hashtags(hashtags sorted by followers of a user)" />
-                            <String fx:value="Sentiments From Top URLs" />
-                            <String fx:value="Sentiments From Top Hashtags Using ML" />
+                            <String fx:value="Top Influencial URLs(urls sorted by followers of a user)" />
+                            <String fx:value="Sentiments Piechart" />
                             <String fx:value="Sentiments From Top URLs Using ML" />
                             <String fx:value="Timeline of Sentiments Hashtags" />
                             <String fx:value="Timeline of Sentiments URL" />
@@ -92,7 +93,7 @@
                 <NumberAxis side="LEFT" />
               </yAxis>
             </LineChart>
-            <BarChart fx:id="barChartHashtagsURLsCount" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="861.0" prefWidth="997.0" title="Top 5 Hashtags/URLs Count" visible="false" GridPane.columnIndex="3" GridPane.rowIndex="13">
+            <BarChart fx:id="barChartHashtagsURLsCount" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="864.0" prefWidth="1110.0" title="Top 5 Hashtags/URLs Count" visible="false" GridPane.columnIndex="3" GridPane.rowIndex="13">
                <xAxis>
                   <CategoryAxis animated="false" side="BOTTOM" />
                </xAxis>
@@ -103,6 +104,7 @@
             <ProgressBar fx:id="progressBar" prefWidth="200.0" progress="0.0" visible="false" GridPane.rowIndex="15" />
             <TextField fx:id="locationOfTheDataset" prefHeight="26.0" prefWidth="532.0" promptText="hdfs://localhost:9000/tweetsnew1.json" text="hdfs://localhost:9000/tweetsnew1.json" GridPane.columnIndex="1" GridPane.rowIndex="12" />
             <Label prefHeight="100.0" prefWidth="158.0" text="Use own JSON dataset? &#10;(Optional) &#10;HDFS or Local.&#10;If specified,&#10;the above fields &#10;are not used&#10;" GridPane.rowIndex="12" />
+            <PieChart fx:id="pieChart" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="718.0" prefWidth="1091.0" title="Sentiment Piechart" visible="false" GridPane.columnIndex="3" GridPane.rowIndex="12" />
             </children>
             <columnConstraints>
                 <ColumnConstraints halignment="RIGHT" maxWidth="264.0" minWidth="60.0" prefWidth="158.0" />

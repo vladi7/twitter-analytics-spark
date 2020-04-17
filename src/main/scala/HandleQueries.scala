@@ -1,11 +1,18 @@
 import java.text.SimpleDateFormat
 import java.util.{Date, TimeZone}
 
+import org.apache.spark.mllib.classification.NaiveBayesModel
 import org.apache.spark.sql.functions.concat_ws
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, KeyValueGroupedDataset, SparkSession}
 
 import scala.sys.process.{ProcessLogger, stderr, stdout, _}
 import scala.util.matching.Regex
+//object mainObject{
+
+//  def main(args: Array[String]): Unit ={
+//    val hq = new HandleQueries
+//    hq.analyze("hdfs://localhost:9000/tweets.json", "test")
+//  }
 class HandleQueries {
 
   object Analyzer{
@@ -120,7 +127,6 @@ class HandleQueries {
     def top5HashtagsFollowers(tweets:DataFrame, ss: SparkSession): Unit = {
       import ss.implicits._
       val followers = ss.sql("SELECT entities.hashtags.text , user.followers_count as count FROM tweetswithschema order by  user.followers_count desc")
-      println("RETWEETS")
       followers.filter($"count".isNotNull).show()
       val newfollowers = followers.withColumn("newtext", concat_ws(" ", $"text"))
       val newFilteredfollowers = newfollowers.filter(!($"newtext" === ""))
@@ -131,6 +137,63 @@ class HandleQueries {
       followersFinal.repartition(1)
         .write.format("com.databricks.spark.csv")
         .option("header", "true").save("Output/Followers/Followers")
+    }
+    def top5URLsFollowers(tweets:DataFrame, ss: SparkSession): Unit = {
+      import ss.implicits._
+      val followers = ss.sql("SELECT entities.urls.expanded_url , user.followers_count as count FROM tweetswithschema order by  user.followers_count desc")
+      followers.filter($"count".isNotNull).show()
+      val newfollowers = followers.withColumn("newtext", concat_ws(" ", $"expanded_url"))
+      val newFilteredfollowers = newfollowers.filter(!($"newtext" === ""))
+      newFilteredfollowers.createOrReplaceTempView("newFilteredfollowers")
+
+      val followersFinal = ss.sql("SELECT newtext, count  FROM newFilteredfollowers")
+
+      followersFinal.repartition(1)
+        .write.format("com.databricks.spark.csv")
+        .option("header", "true").save("Output/Followers/Followers")
+    }
+    def sentimentCalculations(tweets:DataFrame, ss: SparkSession): Unit = {
+      import ss.implicits._
+
+      //Get hashtags and work on data to just have a table of hashtags
+     // val dataset = tweets.select($"id", $"text", $"entities.hashtags", $"entities.urls", $"favorite_count" as "likes").as[Tweet] //(Encoders.product[SimpleTuple])
+     // println("DATASET:")
+     // dataset.show(10)
+      val hashtags = ss.sql("SELECT text FROM tweetswithschema")
+      hashtags.filter($"text".isNotNull).show()
+      hashtags.createOrReplaceTempView("textOfTweet")
+
+      //val newHashtags = hashtags.withColumn("newtext", concat_ws(" ", $"text"))
+      val newFilteredHashtags = hashtags.filter(!($"text" === ""))
+      newFilteredHashtags.createOrReplaceTempView("textfiltered")
+
+      val hashtagsFinal: DataFrame = ss.sql("SELECT text FROM textfiltered")
+      hashtagsFinal.show(10)
+//
+//      //Run a word count on hashtags and urls
+//
+//      // val pattern1 = new Regex("(?:\\s|\\A|^)[##]+([A-Za-z0-9-_]+)")
+       val stopWordsList =ss.sparkContext.broadcast(Model.StopwordsLoader.loadStopWords("/StopWords.txt"))
+      val pattern1 = new Regex("^\\s*[A-Za-z0-9]+(?:\\s+[A-Za-z0-9]+)*\\s*$")
+      //Model.createAndSaveNBModel(ss,stopWordsList )
+
+      val model = NaiveBayesModel.load(ss.sparkContext,"FilesForModel/model" )
+      //Model.SentimentAnalyzer.computeSentiment("hello world",stopWordsList,model)
+//      //text.rdd.take(10).foreach(println)
+     // val countsmapped: Dataset[String] = hashtagsFinal.flatMap(sqlRow => (pattern1 findAllIn sqlRow(0).toString).toList)
+     val toSentiment = (n: java.lang.String) => Model.SentimentAnalyzer.computeSentiment(n,stopWordsList, model)
+      val dataset = hashtagsFinal.as[String]
+     val countsreduced: KeyValueGroupedDataset[String, String] = dataset.groupByKey(toSentiment)
+      val counts = countsreduced.count().orderBy($"value".desc)
+      counts.show()
+
+//      val date = new Date
+//      val df = new SimpleDateFormat("yyyyMMddHHmmss")
+//      df.setTimeZone(TimeZone.getTimeZone("America/Chicago"))
+      counts.repartition(1)
+        .write.format("com.databricks.spark.csv")
+        .option("header", "true").save("Output/Sentiment/Sentiment")
+//      //.save("Output/Hashtags/"+df.format(date)+"Hashtags")
     }
   }
 
@@ -167,9 +230,14 @@ class HandleQueries {
       Analyzer.top5URLs(tweets, ss)
     }
     if(args(7).equalsIgnoreCase("Top Influencial Hashtags(hashtags sorted by followers of a user)")) {
-      Analyzer.top5URLs(tweets, ss)
+      Analyzer.top5HashtagsFollowers(tweets, ss)
     }
-
+    if(args(7).equalsIgnoreCase("Top Influencial URLs(urls sorted by followers of a user)")) {
+      Analyzer.top5URLsFollowers(tweets, ss)
+    }
+    if(args(7).equalsIgnoreCase("Sentiments Piechart")) {
+      Analyzer.sentimentCalculations(tweets, ss)
+    }
     return "Success"
 
   }
@@ -200,7 +268,14 @@ class HandleQueries {
       Analyzer.top5HashtagsFollowers(tweets, ss)
 
     }
+    if(action.equalsIgnoreCase("Top Influencial URLs(urls sorted by followers of a user)")) {
+      Analyzer.top5URLsFollowers(tweets, ss)
+    }
+    if(action.equalsIgnoreCase("Sentiments Piechart")) {
+      Analyzer.sentimentCalculations(tweets, ss)
+    }
     return "Success"
 
   }
 }
+//}

@@ -2,7 +2,6 @@
 Inspired by https://github.com/P7h/Spark-MLlib-Twitter-Sentiment-Analysis
  */
 
-package org.p7h.spark.sentiment.mllib
 
 import org.apache.hadoop.io.compress.GzipCodec
 import org.apache.spark.broadcast.Broadcast
@@ -15,21 +14,23 @@ import org.apache.spark.serializer.KryoSerializer
 import org.apache.spark.sql._
 import org.apache.spark.{SparkConf, SparkContext}
 
+import scala.util.Random
+
 
 // spark-submit --class "org.p7h.spark.sentiment.mllib.SparkNaiveBayesModelCreator" --master spark://spark:7077 spark-streaming-corenp-mllib-tweet-sentiment-assembly-0.1.jar
 object Model {
 
-  def main(args: Array[String]) {
-    val ss = SparkSession.builder().appName("test").master("local[*]").getOrCreate()
-
-    val stopWordsList =ss.sparkContext.broadcast(StopwordsLoader.loadStopWords("/StopWords.txt"))
-   // createAndSaveNBModel(ss, stopWordsList)
-   // validateAccuracyOfNBModel(ss, stopWordsList)
-   //
-    val model = NaiveBayesModel.load(ss.sparkContext,"FilesForModel/model" )
-    println("Sentiment:"+SentimentAnalyzer.computeSentiment("stupid dwarf",stopWordsList,model))
-
-  }
+//  def main(args: Array[String]) {
+//    val ss = SparkSession.builder().appName("test").master("local[*]").getOrCreate()
+//
+//    val stopWordsList =ss.sparkContext.broadcast(StopwordsLoader.loadStopWords("/StopWords.txt"))
+//   // createAndSaveNBModel(ss, stopWordsList)
+//   // validateAccuracyOfNBModel(ss, stopWordsList)
+//   //
+//    val model = NaiveBayesModel.load(ss.sparkContext,"FilesForModel/model" )
+//    println("Sentiment:"+SentimentAnalyzer.computeSentiment("clever dwarf",stopWordsList,model))
+//
+//  }
 
   def replaceNewLines(tweetText: String): String = {
     tweetText.replaceAll("\n", "")
@@ -124,19 +125,39 @@ object Model {
 
 
 
-    def computeSentiment(text: String, stopWordsList: Broadcast[List[String]], model: NaiveBayesModel): Int = {
+    def computeSentiment(text: String, stopWordsList: Broadcast[List[String]], model: NaiveBayesModel): String = {
+      val randomInt = new Random()
+
       val tweetInWords: Seq[String] = getBarebonesTweetText(text, stopWordsList.value)
       val polarity = model.predict(SentimentAnalyzer.transformFeatures(tweetInWords))
-      normalizeMLlibSentiment(polarity)
+      val randomNumber = randomInt.nextInt(10)
+
+      if(randomNumber>7&&polarity == 0)//adding randomness
+        {
+          normalizeMLlibSentiment(2)//adding randomness
+        }
+      else if(randomNumber<7&&polarity == 0){
+        normalizeMLlibSentiment(0)
+      } else if(randomNumber>7&&polarity == 4)//adding randomness
+      {
+        normalizeMLlibSentiment(2)//adding randomness
+      }
+      else if(randomNumber<7&&polarity == 4){
+        normalizeMLlibSentiment(4)
+      }
+      else{
+        normalizeMLlibSentiment(4)
+      }
+
     }
 
 
     def normalizeMLlibSentiment(sentiment: Double) = {
       sentiment match {
-        case x if x == 0 => -1 // negative
-        case x if x == 2 => 0 // neutral
-        case x if x == 4 => 1 // positive
-        case _ => 0 // if cant figure the sentiment, term it as neutral
+        case x if x == 0 => "Negative" // negative
+        case x if x == 2 => "Neutral" // neutral
+        case x if x == 4 => "Positive" // positive
+        case _ => "Neutral" // if cant figure the sentiment, term it as neutral
       }
     }
 
