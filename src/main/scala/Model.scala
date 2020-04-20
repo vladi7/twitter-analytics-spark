@@ -152,6 +152,27 @@ object Model {
     }
 
 
+    def normalizeMLlibSentiment2(sentiment: Double) = {
+      sentiment match {
+        case x if x == 0 => -1 // negative
+        case x if x == 2 => 0 // neutral
+        case x if x == 4 => 1 // positive
+        case _ => 0 // if cant figure the sentiment, term it as neutral
+      }
+    }
+
+    def computeSentiment2(text: String, stopWordsList: Broadcast[List[String]], model: NaiveBayesModel): Int = {
+      val randomInt = new Random()
+
+      val tweetInWords: Seq[String] = getBarebonesTweetText(text, stopWordsList.value)
+      val polarity = model.predict(SentimentAnalyzer.transformFeatures(tweetInWords))
+
+
+      normalizeMLlibSentiment2(polarity)
+
+    }
+
+
     def normalizeMLlibSentiment(sentiment: Double) = {
       sentiment match {
         case x if x == 0 => "Negative" // negative
@@ -160,8 +181,6 @@ object Model {
         case _ => "Neutral" // if cant figure the sentiment, term it as neutral
       }
     }
-
-
     def getBarebonesTweetText(tweetText: String, stopWordsList: List[String]): Seq[String] = {
       //Remove URLs, RT, MT and other redundant chars / strings from the tweets.
       tweetText.toLowerCase()

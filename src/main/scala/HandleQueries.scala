@@ -8,19 +8,15 @@ import org.apache.spark.sql.{DataFrame, KeyValueGroupedDataset, SparkSession}
 import scala.sys.process.{ProcessLogger, stderr, stdout, _}
 import scala.util.matching.Regex
 //object mainObject{
-
+//
 //  def main(args: Array[String]): Unit ={
 //    val hq = new HandleQueries
-//    hq.analyze("hdfs://localhost:9000/tweets.json", "test")
+//    hq.analyze("hdfs://localhost:9000/tweetsnew1.json", "Timeline of Languages of Tweets")
 //  }
 class HandleQueries {
 
   object Analyzer{
     def callPython(args: Array[String]): String = {
-
-      // print("python TweetStreamer.py "+ args(0) + " "+args(1)+" "+ args(3)+" "+args(2)+" "+args(4) +" "+ args(5)+" "+args(6))
-      //      System.exit(0)
-      //val result = "python TweetStreamer.py DBBLXnPte2RbTlX0Oh1DhQegp ZyCfhnPeaLYK7TmiKweJec49WhjOHce4yWlkEueT5FSX39XOPX 1220900648968912897-GxoA6gr81750WqMLSwmJbzLmBL0ryG WG5vi86sVpnjT4EwgIzaAHVGRgYsfWvSRsydgWaDogZ3A [en,ru] [I,a,the,love,thank,happy,great] 1000" ! ProcessLogger(stdout append _, stderr append _)
 
       val consumerKey = args(0)replaceAll("\\s", "")
       val consumerSecret = args(1)replaceAll("\\s", "")
@@ -48,7 +44,6 @@ class HandleQueries {
     def top5Hashtags(tweets:DataFrame, ss: SparkSession): Unit ={
       import ss.implicits._
 
-      //Get hashtags and work on data to just have a table of hashtags
       val dataset = tweets.select($"id", $"text", $"entities.hashtags", $"entities.urls", $"favorite_count" as "likes").as[Tweet] //(Encoders.product[SimpleTuple])
       println("DATASET:")
       dataset.show(10)
@@ -63,26 +58,21 @@ class HandleQueries {
       val hashtagsFinal = ss.sql("SELECT newtext FROM hashtagsfiltered")
 
 
-      //Run a word count on hashtags and urls
 
-      // val pattern1 = new Regex("(?:\\s|\\A|^)[##]+([A-Za-z0-9-_]+)")
 
       val pattern1 = new Regex("^\\s*[A-Za-z0-9]+(?:\\s+[A-Za-z0-9]+)*\\s*$")
 
-      //text.rdd.take(10).foreach(println)
       val countsmapped = hashtagsFinal.flatMap(sqlRow => (pattern1 findAllIn sqlRow(0).toString).toList)
       val countsreduced = countsmapped.groupByKey(_.toLowerCase)
       val counts = countsreduced.count().orderBy($"count(1)".desc)
       counts.show()
 
 
-      val date = new Date
       val df = new SimpleDateFormat("yyyyMMddHHmmss")
       df.setTimeZone(TimeZone.getTimeZone("America/Chicago"))
       counts.repartition(1)
         .write.format("com.databricks.spark.csv")
         .option("header", "true").save("Output/Hashtags/Hashtags")
-      //.save("Output/Hashtags/"+df.format(date)+"Hashtags")
 
 
 
@@ -111,16 +101,11 @@ class HandleQueries {
 
       counts2.show()
 
-      val date = new Date
-      val df = new SimpleDateFormat("yyyyMMddHHmmss")
-      df.setTimeZone(TimeZone.getTimeZone("America/Chicago"))
-      // counts2.write.csv("Output/"+df.format(date)+"outputURLs")
 
       counts2
         .repartition(1)
         .write.format("com.databricks.spark.csv")
         .option("header", "true").save("Output/URLs/URLS")
-      //.save("Output/URLs/"+df.format(date)+"URLS")
 
 
     }
@@ -155,45 +140,205 @@ class HandleQueries {
     def sentimentCalculations(tweets:DataFrame, ss: SparkSession): Unit = {
       import ss.implicits._
 
-      //Get hashtags and work on data to just have a table of hashtags
-     // val dataset = tweets.select($"id", $"text", $"entities.hashtags", $"entities.urls", $"favorite_count" as "likes").as[Tweet] //(Encoders.product[SimpleTuple])
-     // println("DATASET:")
-     // dataset.show(10)
+
       val hashtags = ss.sql("SELECT text FROM tweetswithschema")
       hashtags.filter($"text".isNotNull).show()
       hashtags.createOrReplaceTempView("textOfTweet")
 
-      //val newHashtags = hashtags.withColumn("newtext", concat_ws(" ", $"text"))
       val newFilteredHashtags = hashtags.filter(!($"text" === ""))
       newFilteredHashtags.createOrReplaceTempView("textfiltered")
 
       val hashtagsFinal: DataFrame = ss.sql("SELECT text FROM textfiltered")
       hashtagsFinal.show(10)
-//
-//      //Run a word count on hashtags and urls
-//
-//      // val pattern1 = new Regex("(?:\\s|\\A|^)[##]+([A-Za-z0-9-_]+)")
+
        val stopWordsList =ss.sparkContext.broadcast(Model.StopwordsLoader.loadStopWords("/StopWords.txt"))
       val pattern1 = new Regex("^\\s*[A-Za-z0-9]+(?:\\s+[A-Za-z0-9]+)*\\s*$")
-      //Model.createAndSaveNBModel(ss,stopWordsList )
 
       val model = NaiveBayesModel.load(ss.sparkContext,"FilesForModel/model" )
-      //Model.SentimentAnalyzer.computeSentiment("hello world",stopWordsList,model)
-//      //text.rdd.take(10).foreach(println)
-     // val countsmapped: Dataset[String] = hashtagsFinal.flatMap(sqlRow => (pattern1 findAllIn sqlRow(0).toString).toList)
+
      val toSentiment = (n: java.lang.String) => Model.SentimentAnalyzer.computeSentiment(n,stopWordsList, model)
       val dataset = hashtagsFinal.as[String]
      val countsreduced: KeyValueGroupedDataset[String, String] = dataset.groupByKey(toSentiment)
       val counts = countsreduced.count().orderBy($"value".desc)
       counts.show()
 
-//      val date = new Date
-//      val df = new SimpleDateFormat("yyyyMMddHHmmss")
-//      df.setTimeZone(TimeZone.getTimeZone("America/Chicago"))
       counts.repartition(1)
         .write.format("com.databricks.spark.csv")
         .option("header", "true").save("Output/Sentiment/Sentiment")
-//      //.save("Output/Hashtags/"+df.format(date)+"Hashtags")
+    }
+    def sentimentCalculationsBubbleChart(tweets:DataFrame, ss: SparkSession): Unit = {
+      import ss.implicits._
+
+      val hashtags = ss.sql("SELECT text as tweettext, entities.hashtags.text, user.followers_count as followers, created_at as time, user.statuses_count as statuses FROM tweetswithschema")
+      hashtags.filter($"tweettext".isNotNull).show()
+      hashtags.filter($"text".isNotNull).show()
+      hashtags.filter($"followers".isNotNull)
+      hashtags.createOrReplaceTempView("textOfTweet")
+
+     val newHashtags =  hashtags.withColumn("hashtag", concat_ws(" ", $"text"))
+
+      val newFilteredHashtags1 = newHashtags.filter(!($"tweettext" === ""))
+      println("1")
+      newFilteredHashtags1.show()
+      val newFilteredHashtags2 = newFilteredHashtags1.filter(!($"hashtag" === ""))
+      println("2")
+
+      newFilteredHashtags2.show()
+
+      newFilteredHashtags2.createOrReplaceTempView("textfiltered")
+      val hashtagsFinal: DataFrame = ss.sql("SELECT tweettext FROM textfiltered")
+
+      val hashtagsFinal2: DataFrame = ss.sql("SELECT tweettext, hashtag, followers, time, statuses FROM textfiltered")
+      hashtagsFinal.show(10)
+      import org.apache.spark.sql.functions.udf
+
+
+
+
+      val stopWordsList =ss.sparkContext.broadcast(Model.StopwordsLoader.loadStopWords("/StopWords.txt"))
+
+      val model = NaiveBayesModel.load(ss.sparkContext,"FilesForModel/model" )
+
+      val toSentiment = (n: java.lang.String) => Model.SentimentAnalyzer.computeSentiment2(n,stopWordsList, model)
+      val sentiment = udf(toSentiment)
+      val DF: DataFrame = hashtagsFinal2.withColumn("sentiment",sentiment('tweettext))
+      import org.apache.spark.sql.functions._
+
+      val finalDF = DF.select(col("textfiltered.followers"),col("textfiltered.statuses"),col("sentiment"),substring(col("textfiltered.time"), 15, 2).as("time"))
+      finalDF.show(10)
+
+      finalDF.repartition(1)
+        .write.format("com.databricks.spark.csv")
+        .option("header", "true").save("Output/SentimentBubbleChart/SentimentBubbleChart")
+
+
+    }
+
+    def languagePieChart(tweets:DataFrame, ss: SparkSession): Unit = {
+      import ss.implicits._
+
+      val hashtags = ss.sql("SELECT lang FROM tweetswithschema")
+      hashtags.filter($"lang".isNotNull).show()
+      hashtags.createOrReplaceTempView("hashtagtext")
+
+      val newFilteredHashtags = hashtags.filter(!($"lang" === ""))
+      newFilteredHashtags.createOrReplaceTempView("hashtagsfiltered")
+
+      val hashtagsFinal = ss.sql("SELECT lang FROM hashtagsfiltered")
+      hashtagsFinal.show(10)
+
+
+      val pattern1 = new Regex("^\\s*[A-Za-z0-9]+(?:\\s+[A-Za-z0-9]+)*\\s*$")
+
+      val countsmapped = hashtagsFinal.flatMap(sqlRow => (pattern1 findAllIn sqlRow(0).toString).toList)
+      val countsreduced = countsmapped.groupByKey(_.toLowerCase)
+      val counts = countsreduced.count().orderBy($"count(1)".desc)
+      counts.show()
+
+      val date = new Date
+      val df = new SimpleDateFormat("yyyyMMddHHmmss")
+      df.setTimeZone(TimeZone.getTimeZone("America/Chicago"))
+      counts.repartition(1)
+        .write.format("com.databricks.spark.csv")
+        .option("header", "true").save("Output/LanguagePieChart/LanguagePieChart")
+
+
+    }
+    def languagePieChartFollowers(tweets:DataFrame, ss: SparkSession): Unit = {
+      import ss.implicits._
+
+      val hashtags = ss.sql("SELECT lang,  user.followers_count as followers FROM tweetswithschema")
+      hashtags.filter($"lang".isNotNull)
+      hashtags.filter($"followers".isNotNull)
+
+      hashtags.createOrReplaceTempView("hashtagtext")
+      val newFilteredHashtags = hashtags.filter(!($"lang" === ""))
+      newFilteredHashtags.createOrReplaceTempView("hashtagsfiltered")
+
+      val hashtagsFinal = ss.sql("SELECT lang, followers FROM hashtagsfiltered")
+
+
+      val countFollowersFinal: DataFrame = hashtagsFinal.groupBy("lang").sum()
+
+      countFollowersFinal.show(10)
+
+
+      countFollowersFinal.repartition(1)
+        .write.format("com.databricks.spark.csv")
+        .option("header", "true").save("Output/LanguageFollowersPieChart/LanguageFollowersPieChart")
+
+    }
+    def timelineOfSentiments(tweets:DataFrame, ss: SparkSession): Unit = {
+      import ss.implicits._
+
+
+
+      val hashtags = ss.sql("SELECT text as tweettext, created_at as time , user.followers_count as followers FROM tweetswithschema")
+      hashtags.filter($"tweettext".isNotNull).show()
+      hashtags.createOrReplaceTempView("textOfTweet")
+
+
+      val newFilteredHashtags1 = hashtags.filter(!($"tweettext" === ""))
+      println("1")
+      newFilteredHashtags1.show()
+
+      newFilteredHashtags1.createOrReplaceTempView("textfiltered")
+
+
+      val hashtagsFinal: DataFrame = ss.sql("SELECT tweettext,time,followers FROM textfiltered")
+
+      import org.apache.spark.sql.functions.udf
+
+
+
+      val stopWordsList =ss.sparkContext.broadcast(Model.StopwordsLoader.loadStopWords("/StopWords.txt"))
+
+      val model = NaiveBayesModel.load(ss.sparkContext,"FilesForModel/model" )
+
+      val toSentiment = (n: java.lang.String) => Model.SentimentAnalyzer.computeSentiment(n,stopWordsList, model)
+      val sentiment = udf(toSentiment)
+      val DF: DataFrame = hashtagsFinal.withColumn("sentiment",sentiment('tweettext))
+      import org.apache.spark.sql.functions._
+
+      val finalDF = DF.select(col("textfiltered.followers"),col("sentiment"),substring(col("textfiltered.time"), 15, 2).as("time"))
+      finalDF.show(10)
+
+
+      finalDF.repartition(1)
+        .write.format("com.databricks.spark.csv")
+        .option("header", "true").save("Output/LineChartSentimentFollowers/LineChartSentimentFollowers")
+
+    }
+
+    def timelineOfLanguages(tweets:DataFrame, ss: SparkSession): Unit = {
+      import ss.implicits._
+
+
+
+      val hashtags = ss.sql("SELECT created_at as time , user.followers_count as followers, lang FROM tweetswithschema")
+      hashtags.filter($"lang".isNotNull).show()
+
+      hashtags.createOrReplaceTempView("textOfTweet")
+
+
+      val newFilteredHashtags1 = hashtags.filter(!($"lang" === ""))
+
+      newFilteredHashtags1.createOrReplaceTempView("textfiltered")
+
+
+      val hashtagsFinal: DataFrame = ss.sql("SELECT lang,time,followers FROM textfiltered")
+
+
+      import org.apache.spark.sql.functions._
+
+      val finalDF = hashtagsFinal.select(col("textfiltered.lang"),col("textfiltered.followers"),substring(col("textfiltered.time"), 15, 2).as("time"))
+      finalDF.show(10)
+
+
+      finalDF.repartition(1)
+        .write.format("com.databricks.spark.csv")
+        .option("header", "true").save("Output/timelineOfLanguages/timelineOfLanguages")
+
     }
   }
 
@@ -235,9 +380,25 @@ class HandleQueries {
     if(args(7).equalsIgnoreCase("Top Influencial URLs(urls sorted by followers of a user)")) {
       Analyzer.top5URLsFollowers(tweets, ss)
     }
-    if(args(7).equalsIgnoreCase("Sentiments Piechart")) {
+    if(args(7).equalsIgnoreCase("Sentiments Piechart(English Only)")) {
       Analyzer.sentimentCalculations(tweets, ss)
     }
+    if(args(7).equalsIgnoreCase("Sentiment Bubblechart(English Only)")) {
+      Analyzer.sentimentCalculationsBubbleChart(tweets, ss)
+    }
+    if(args(7).equalsIgnoreCase("Language Piechart Tweet Count")) {
+      Analyzer.languagePieChart(tweets, ss)
+    }
+    if(args(7).equalsIgnoreCase("Language Piechart Influence(Followers)")) {
+      Analyzer.languagePieChartFollowers(tweets, ss)
+    }
+    if(args(7).equalsIgnoreCase("Timeline of Sentiments of Tweets")) {
+      Analyzer.timelineOfSentiments(tweets, ss)
+    }
+    if(args(7).equalsIgnoreCase("Timeline of Languages of Tweets")) {
+      Analyzer.timelineOfLanguages(tweets, ss)
+    }
+
     return "Success"
 
   }
@@ -271,11 +432,27 @@ class HandleQueries {
     if(action.equalsIgnoreCase("Top Influencial URLs(urls sorted by followers of a user)")) {
       Analyzer.top5URLsFollowers(tweets, ss)
     }
-    if(action.equalsIgnoreCase("Sentiments Piechart")) {
+    if(action.equalsIgnoreCase("Sentiments Piechart(English Only)")) {
       Analyzer.sentimentCalculations(tweets, ss)
     }
+    if(action.equalsIgnoreCase("Sentiment Bubblechart(English Only)")) {
+      Analyzer.sentimentCalculationsBubbleChart(tweets, ss)
+    }
+    if(action.equalsIgnoreCase("Language Piechart Tweet Count")) {
+      Analyzer.languagePieChart(tweets, ss)
+    }
+    if(action.equalsIgnoreCase("Language Piechart Influence(Followers)")) {
+      Analyzer.languagePieChartFollowers(tweets, ss)
+    }
+    if(action.equalsIgnoreCase("Timeline of Sentiments of Tweets")) {
+      Analyzer.timelineOfSentiments(tweets, ss)
+    }
+    if(action.equalsIgnoreCase("Timeline of Languages of Tweets")) {
+      Analyzer.timelineOfLanguages(tweets, ss)
+    }
+
     return "Success"
 
   }
-}
 //}
+}
